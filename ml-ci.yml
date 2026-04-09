@@ -1,0 +1,39 @@
+name: ML CI
+
+on:
+  push:
+    branches: [ml-resnet-efficientnet]
+  pull_request:
+    branches: [ml-resnet-efficientnet]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: install dependencies
+        run: pip install -r requirements.txt flake8 pytest
+
+      - name: lint
+        run: flake8 src/ --max-line-length=120 --ignore=E501,W503
+
+      - name: test imports
+        run: |
+          cd src
+          python -c "from dataset import get_dataloaders, CLASSES; print('dataset ok')"
+          python -c "from model import build_resnet50, build_efficientnet_b0; print('model ok')"
+          python -c "from utils import route, evaluate, export_onnx; print('utils ok')"
