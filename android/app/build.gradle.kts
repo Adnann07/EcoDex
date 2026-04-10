@@ -25,27 +25,9 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 21
-        
-        // Conditional check for targetSdk - works with both property and method access
-        targetSdk = if (flutter.hasProperty("targetSdkVersion")) {
-            flutter.targetSdkVersion
-        } else {
-            flutter.targetSdkVersion()
-        }
-        
-        // Conditional check for versionCode
-        versionCode = if (flutter.hasProperty("versionCode")) {
-            flutter.versionCode
-        } else {
-            flutter.versionCode()
-        }
-        
-        // Conditional check for versionName
-        versionName = if (flutter.hasProperty("versionName")) {
-            flutter.versionName
-        } else {
-            flutter.versionName()
-        }
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode()
+        versionName = flutter.versionName()
     }
 
     buildTypes {
