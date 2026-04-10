@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'home_screen.dart';
 import 'register_screen.dart';
+import 'api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,6 +65,7 @@ class _LoginScreenState extends State<LoginScreen>
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
+        ApiService.setToken(data['token']); // ADD THIS
         if (!mounted) return;
         // Navigate to HomeScreen and clear stack
         Navigator.of(context).pushAndRemoveUntil(

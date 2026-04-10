@@ -84,4 +84,36 @@ class AuthController extends Controller
             'user'    => $request->user(),
         ]);
     }
+
+    public function addPoints(Request $request)
+    {
+        $request->validate(['points' => 'required|integer|min:1']);
+
+        $user = $request->user();
+        $user->increment('points', $request->points);
+        $user->increment('total_scans');
+
+        return response()->json([
+            'success'      => true,
+            'points'       => $user->fresh()->points,
+            'total_scans'  => $user->fresh()->total_scans,
+        ]);
+    }
+
+    public function leaderboard()
+    {
+        $users = User::select('name', 'points', 'total_scans')
+            ->orderByDesc('points')
+            ->limit(50)
+            ->get()
+            ->values()
+            ->map(fn($u, $i) => [
+                'rank'        => $i + 1,
+                'name'        => $u->name,
+                'points'      => $u->points,
+                'total_scans' => $u->total_scans,
+            ]);
+
+        return response()->json(['success' => true, 'leaderboard' => $users]);
+    }
 }

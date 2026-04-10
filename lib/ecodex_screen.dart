@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'waste_classifier.dart';
+import 'api_service.dart';
 
 class EcoDexScreen extends StatefulWidget {
   const EcoDexScreen({super.key});
@@ -170,7 +171,8 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
           _resultEmoji = result.emoji;
           _resultConfidence = result.confidence;
           _ecoTip = result.tip;
-          _userPoints += 10; // Add points for scanning
+          _userPoints += 10;
+          ApiService.addPoints(10);
         });
         _resultController.forward(from: 0);
       }
@@ -339,7 +341,11 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
                     child: Column(
                       children: [
                         const SizedBox(height: 12),
-                        _selectedTab == 0 ? _buildRewardsTab() : _buildPokedexBody(),
+                        _selectedTab == 0
+                            ? _buildRewardsTab()
+                            : _selectedTab == 2
+                                ? _buildLeaderboard()
+                                : _buildPokedexBody(),
                         const SizedBox(height: 16),
                         if (_selectedTab != 0) _buildEcoTipBox(),
                         const SizedBox(height: 12),
@@ -353,6 +359,99 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLeaderboard() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: ApiService.getLeaderboard(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF44CC44)),
+          );
+        }
+        final board = snapshot.data!;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFCC3300),
+            border: Border(
+              top: BorderSide(color: Color(0xFFFF6644), width: 4),
+              left: BorderSide(color: Color(0xFFFF6644), width: 4),
+              right: BorderSide(color: Color(0xFF7A1E00), width: 4),
+              bottom: BorderSide(color: Color(0xFF7A1E00), width: 4),
+            ),
+          ),
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text(
+                  '🏆 LEADERBOARD',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFFFCC00),
+                    letterSpacing: 3,
+                  ),
+                ),
+              ),
+              ...board.map((u) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1A1A2E),
+                  border: Border(
+                    top: BorderSide(color: Color(0xFF333355), width: 2),
+                    left: BorderSide(color: Color(0xFF333355), width: 2),
+                    right: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+                    bottom: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 32,
+                      child: Text(
+                        '#${u['rank']}',
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          color: Color(0xFFFFCC00),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        u['name'],
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${u['points']} pts',
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        color: Color(0xFF44FF88),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
     );
   }
 
