@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'home_screen.dart';
+import 'login_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class EcoDexApp extends StatelessWidget {
         fontFamily: 'monospace',
         scaffoldBackgroundColor: const Color(0xFFF0F0C8),
       ),
-      home: const HomeScreen(),
+      home: const LoginScreen(),
     );
   }
 }

@@ -33,6 +33,29 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
   late Animation<double> _resultSlide;
 
   int _selectedTab = 1;
+  int _userPoints = 0;
+
+  // Rewards data
+  final List<Map<String, dynamic>> _rewards = [
+    {
+      'name': 'Discord Nitro',
+      'points': 2500,
+      'icon': '🎮',
+      'color': Color(0xFF5865F2),
+    },
+    {
+      'name': 'Spotify Premium',
+      'points': 1500,
+      'icon': '🎵',
+      'color': Color(0xFF1DB954),
+    },
+    {
+      'name': 'YouTube Premium',
+      'points': 3000,
+      'icon': '📺',
+      'color': Color(0xFFFF0000),
+    },
+  ];
 
   @override
   void initState() {
@@ -147,6 +170,7 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
           _resultEmoji = result.emoji;
           _resultConfidence = result.confidence;
           _ecoTip = result.tip;
+          _userPoints += 10; // Add points for scanning
         });
         _resultController.forward(from: 0);
       }
@@ -176,6 +200,128 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
     );
   }
 
+  void _showRedeemDialog(Map<String, dynamic> reward) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1A2E),
+            border: Border(
+              top: BorderSide(color: Color(0xFF4444AA), width: 3),
+              left: BorderSide(color: Color(0xFF4444AA), width: 3),
+              right: BorderSide(color: Color(0xFF0A0A1A), width: 3),
+              bottom: BorderSide(color: Color(0xFF0A0A1A), width: 3),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${reward['icon']} ${reward['name']}',
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  color: Color(0xFFFFCC00),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Redeem for ${reward['points']} points?',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  color: Colors.white70,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF555555),
+                        border: Border(
+                          top: BorderSide(color: Color(0xFF888888), width: 2),
+                          left: BorderSide(color: Color(0xFF888888), width: 2),
+                          right: BorderSide(color: Color(0xFF222222), width: 2),
+                          bottom: BorderSide(color: Color(0xFF222222), width: 2),
+                        ),
+                      ),
+                      child: const Text(
+                        'CANCEL',
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      if (_userPoints >= reward['points']) {
+                        setState(() {
+                          _userPoints -= reward['points'] as int;
+                        });
+                        Navigator.of(context).pop();
+                        _showPixelDialog(
+                          'REDEEMED!',
+                          'You successfully redeemed ${reward['name']}!\nCode will be sent to your email.',
+                        );
+                      } else {
+                        Navigator.of(context).pop();
+                        _showPixelDialog(
+                          'INSUFFICIENT POINTS',
+                          'You need ${reward['points']} points to redeem this reward.\nCurrent points: $_userPoints',
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4A7A3A),
+                        border: Border(
+                          top: BorderSide(color: Color(0xFF88CC66), width: 2),
+                          left: BorderSide(color: Color(0xFF88CC66), width: 2),
+                          right: BorderSide(color: Color(0xFF1A3A0F), width: 2),
+                          bottom: BorderSide(color: Color(0xFF1A3A0F), width: 2),
+                        ),
+                      ),
+                      child: const Text(
+                        'REDEEM',
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,9 +339,9 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
                     child: Column(
                       children: [
                         const SizedBox(height: 12),
-                        _buildPokedexBody(),
+                        _selectedTab == 0 ? _buildRewardsTab() : _buildPokedexBody(),
                         const SizedBox(height: 16),
-                        _buildEcoTipBox(),
+                        if (_selectedTab != 0) _buildEcoTipBox(),
                         const SizedBox(height: 12),
                       ],
                     ),
@@ -205,6 +351,179 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRewardsTab() {
+    return Column(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFCC3300),
+            border: Border(
+              top: BorderSide(color: Color(0xFFFF6644), width: 4),
+              left: BorderSide(color: Color(0xFFFF6644), width: 4),
+              right: BorderSide(color: Color(0xFF7A1E00), width: 4),
+              bottom: BorderSide(color: Color(0xFF7A1E00), width: 4),
+            ),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              _buildPointsDisplay(),
+              const SizedBox(height: 12),
+              ..._rewards.map((reward) => _buildRewardCard(reward)),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPointsDisplay() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A2E),
+          border: Border(
+            top: BorderSide(color: Color(0xFF333355), width: 2),
+            left: BorderSide(color: Color(0xFF333355), width: 2),
+            right: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+            bottom: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+          ),
+        ),
+        child: Column(
+          children: [
+            const Text(
+              'YOUR POINTS',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFCCCCCC),
+                letterSpacing: 3,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$_userPoints',
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFFFCC00),
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Scan items to earn points!',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 10,
+                color: Color(0xFF88CC66),
+                letterSpacing: 1,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRewardCard(Map<String, dynamic> reward) {
+    bool canAfford = _userPoints >= reward['points'];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A2E),
+          border: Border(
+            top: BorderSide(color: Color(0xFF333355), width: 2),
+            left: BorderSide(color: Color(0xFF333355), width: 2),
+            right: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+            bottom: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: reward['color'],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white24, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    reward['icon'],
+                    style: const TextStyle(fontSize: 28),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reward['name'],
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${reward['points']} points',
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: Color(0xFFFFCC00),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _showRedeemDialog(reward),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: canAfford ? const Color(0xFF4A7A3A) : const Color(0xFF555555),
+                    border: Border(
+                      top: BorderSide(color: canAfford ? const Color(0xFF88CC66) : const Color(0xFF888888), width: 2),
+                      left: BorderSide(color: canAfford ? const Color(0xFF88CC66) : const Color(0xFF888888), width: 2),
+                      right: BorderSide(color: canAfford ? const Color(0xFF1A3A0F) : const Color(0xFF222222), width: 2),
+                      bottom: BorderSide(color: canAfford ? const Color(0xFF1A3A0F) : const Color(0xFF222222), width: 2),
+                    ),
+                  ),
+                  child: Text(
+                    canAfford ? 'REDEEM' : 'LOCKED',
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -529,7 +848,7 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
                     _analyzing
                         ? 'ANALYZING...'
                         : _resultName != null
-                        ? 'SCAN COMPLETE'
+                        ? 'Confidence Score'
                         : _cameraActive
                         ? 'READY TO SCAN'
                         : 'STANDBY',
@@ -713,9 +1032,13 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _NavItem(icon: '🏠', label: 'HOME', selected: _selectedTab == 0, onTap: () => setState(() => _selectedTab = 0)),
+          _NavItem(icon: '🏠', label: 'HOME', selected: _selectedTab == 0, onTap: () {
+            setState(() => _selectedTab = 0);
+            _stopCamera();
+          }),
           GestureDetector(
             onTap: () {
+              setState(() => _selectedTab = 1);
               if (_analyzing) return;
               if (_cameraActive) {
                 _captureAndAnalyze();
@@ -729,15 +1052,15 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: _cameraActive ? const Color(0xFFCC3300) : const Color(0xFF4A7A3A),
+                color: _selectedTab == 1 ? const Color(0xFFCC3300) : const Color(0xFF4A7A3A),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: _cameraActive ? const Color(0xFFFF6644) : const Color(0xFF88CC66),
+                  color: _selectedTab == 1 ? const Color(0xFFFF6644) : const Color(0xFF88CC66),
                   width: 3,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (_cameraActive ? const Color(0xFFCC3300) : const Color(0xFF4A7A3A)).withOpacity(0.4),
+                    color: (_selectedTab == 1 ? const Color(0xFFCC3300) : const Color(0xFF4A7A3A)).withOpacity(0.4),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
