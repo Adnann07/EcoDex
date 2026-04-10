@@ -1,0 +1,54 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecodex_app
+    restart: unless-stopped
+    working_dir: /var/www
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./:/var/www
+    networks:
+      - ecodex_network
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: ecodex_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - ecodex_network
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: ecodex_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ecodex
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: secret
+      MYSQL_USER: ecodex
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - ecodex_network
+
+networks:
+  ecodex_network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
