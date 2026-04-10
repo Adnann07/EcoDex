@@ -42,19 +42,19 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
       'name': 'Discord Nitro',
       'points': 2500,
       'icon': '🎮',
-      'color': Color(0xFF5865F2),
+      'color': const Color(0xFF5865F2),
     },
     {
       'name': 'Spotify Premium',
       'points': 1500,
       'icon': '🎵',
-      'color': Color(0xFF1DB954),
+      'color': const Color(0xFF1DB954),
     },
     {
       'name': 'YouTube Premium',
       'points': 3000,
       'icon': '📺',
-      'color': Color(0xFFFF0000),
+      'color': const Color(0xFFFF0000),
     },
   ];
 
@@ -172,7 +172,12 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
           _resultConfidence = result.confidence;
           _ecoTip = result.tip;
           _userPoints += 10;
-          ApiService.addPoints(10);
+          ApiService.addScan(
+            itemName: result.name,
+            category: result.category,
+            emoji: result.emoji ?? '',
+            confidence: result.confidence,
+          );
         });
         _resultController.forward(from: 0);
       }
@@ -304,7 +309,7 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
                         ),
                       ),
                       child: const Text(
-                        'REDEEM',
+                        'GET',
                         style: TextStyle(
                           fontFamily: 'monospace',
                           color: Colors.white,
@@ -345,7 +350,9 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
                             ? _buildRewardsTab()
                             : _selectedTab == 2
                                 ? _buildLeaderboard()
-                                : _buildPokedexBody(),
+                                : _selectedTab == 3
+                                    ? _buildHistory()
+                                    : _buildPokedexBody(),
                         const SizedBox(height: 16),
                         if (_selectedTab != 0) _buildEcoTipBox(),
                         const SizedBox(height: 12),
@@ -1118,6 +1125,146 @@ class _EcoDexScreenState extends State<EcoDexScreen> with TickerProviderStateMix
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildHistory() {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: ApiService.getScanHistory(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF44CC44)),
+          );
+        }
+        final history = snapshot.data!;
+        if (history.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(32),
+            child: const Center(
+              child: Text(
+                'No scans yet!\nStart scanning items to\nbuild your history.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  color: Color(0xFF5A6A4A),
+                  fontSize: 14,
+                  height: 1.6,
+                ),
+              ),
+            ),
+          );
+        }
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFCC3300),
+            border: Border(
+              top: BorderSide(color: Color(0xFFFF6644), width: 4),
+              left: BorderSide(color: Color(0xFFFF6644), width: 4),
+              right: BorderSide(color: Color(0xFF7A1E00), width: 4),
+              bottom: BorderSide(color: Color(0xFF7A1E00), width: 4),
+            ),
+          ),
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text(
+                  '👤 SCAN HISTORY',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFFFCC00),
+                    letterSpacing: 3,
+                  ),
+                ),
+              ),
+              ...history.map((scan) => Container(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1A1A2E),
+                  border: Border(
+                    top: BorderSide(color: Color(0xFF333355), width: 2),
+                    left: BorderSide(color: Color(0xFF333355), width: 2),
+                    right: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+                    bottom: BorderSide(color: Color(0xFF0A0A1A), width: 2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      scan['emoji'] ?? '?',
+                      style: const TextStyle(fontSize: 28),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            scan['item_name'],
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            scan['category'],
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              color: Color(0xFFCCEEBB),
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            scan['created_at'].toString().substring(0, 10),
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              color: Color(0xFF666688),
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${scan['confidence']}%',
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            color: Color(0xFF44FF88),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '+${scan['points_earned']} pts',
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            color: Color(0xFFFFCC00),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
     );
   }
 

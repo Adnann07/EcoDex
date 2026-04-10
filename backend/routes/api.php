@@ -11,6 +11,8 @@ Route::get('/leaderboard', [AuthController::class, 'leaderboard']); // ADD THIS
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me',      [AuthController::class, 'me']);
-    Route::post('/points/add', [AuthController::class, 'addPoints']); // ADD THIS
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/points/add', [AuthController::class, 'addPoints']);
+    Route::post('/scan', [AuthController::class, 'addScan']);        // ADD THIS
+    Route::get('/scan/history', [AuthController::class, 'scanHistory']); // ADD THIS
 });

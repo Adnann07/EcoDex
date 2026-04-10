@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\ScanHistory;
 
 class AuthController extends Controller
 {
@@ -115,5 +116,47 @@ class AuthController extends Controller
             ]);
 
         return response()->json(['success' => true, 'leaderboard' => $users]);
+    }
+
+    public function addScan(Request $request)
+    {
+        $request->validate([
+            'item_name'  => 'required|string',
+            'category'   => 'required|string',
+            'emoji'      => 'required|string',
+            'confidence' => 'required|integer',
+        ]);
+
+        $user = $request->user();
+
+        ScanHistory::create([
+            'user_id'      => $user->id,
+            'item_name'    => $request->item_name,
+            'category'     => $request->category,
+            'emoji'        => $request->emoji,
+            'confidence'   => $request->confidence,
+            'points_earned'=> 10,
+        ]);
+
+        $user->increment('points', 10);
+        $user->increment('total_scans');
+
+        return response()->json([
+            'success' => true,
+            'points'  => $user->fresh()->points,
+        ]);
+    }
+
+    public function scanHistory(Request $request)
+    {
+        $history = ScanHistory::where('user_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'history' => $history,
+        ]);
     }
 }
