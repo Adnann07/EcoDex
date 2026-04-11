@@ -1,5 +1,4 @@
 # 🌿 EcoDex
-
 > A gamified waste classification mobile app powered by on-device machine learning. Scan items, learn how to dispose of them responsibly, earn points, and compete on the leaderboard.
 
 ---
@@ -8,9 +7,45 @@
 
 | Resource | URL |
 |---|---|
+| **Live Website** | https://ecodex.netlify.app |
+| **Android App (APK)** | https://github.com/Adnann07/EcoDex/releases/download/EcoDex_1.0/base.apk |
 | **Live API** | https://ecodex-production.up.railway.app |
 | **GitHub Repository** | https://github.com/Adnann07/EcoDex |
 | **ML Models & Training Code** | https://github.com/Adnann07/EcoDex/tree/ml-resnet-efficientnet |
+
+---
+
+## 📱 Flutter App — How It Works
+
+1. **Register** — new users create an account with a name, email, and password
+2. **Scan waste** — open the scanner and take a snapshot of any waste item
+3. **Choose your model** — select between ResNet-50 (higher accuracy, 89.8 MB) or EfficientNet-B0 (faster, lighter, 15.7 MB) for classification
+4. **See results** — the app displays the waste category, a confidence percentage, and an eco tip on how to dispose of the item properly
+5. **Earn points** — every scan awards points based on confidence; higher confidence scans earn more
+6. **Climb the leaderboard** — points accumulate over time and your score is ranked against all registered users on a live global leaderboard
+7. **Review history** — browse all past scans with their categories, confidence scores, and timestamps
+
+> All classification runs **entirely on-device** using ONNX Runtime. No images are ever sent to the server — only the classification result (label, confidence, category) is transmitted.
+
+---
+
+## 🌐 Website — https://ecodex.netlify.app
+
+The web companion to the mobile app, accessible from any browser without installation.
+
+**Features:**
+- **User authentication** — register and log in with the same account used in the app
+- **Live leaderboard** — view the top-ranked players by points and total scans in real time
+- **Interactive waste map** — an OpenStreetMap integration pinpointing verified waste management locations across Bangladesh, including:
+  - ♻️ Recycling centres
+  - 🗑️ Landfill & disposal sites
+  - ⚡ Waste-to-energy plants
+  - 💻 E-waste collection points
+  - ☣️ Hazardous & medical waste facilities
+- **Downloadable PDF report** — generate and download a full formatted report of all mapped waste zones, organised by category with locations, coordinates, and facility notes
+- **APK download** — direct link to install the Android app
+
+> The website does not include the ML classifier (no camera/ONNX inference). Classification is exclusive to the Flutter mobile app.
 
 ---
 
@@ -27,7 +62,17 @@
 │  └─────────────┘   └──────────────┘   └────┬─────┘  │
 └───────────────────────────────────────────┼─────────┘
                                             │ HTTPS
-                                            ▼
+                    ┌───────────────────────┼───────────────────────┐
+                    │                       ▼                       │
+                    │          ┌────────────────────────┐           │
+                    │          │    React Web App        │           │
+                    │          │  (ecodex.netlify.app)   │           │
+                    │          │  Leaderboard + Map +    │           │
+                    │          │  PDF Report             │           │
+                    │          └───────────┬─────────────┘           │
+                    └──────────────────────┼────────────────────────┘
+                                           │ HTTPS
+                                           ▼
 ┌─────────────────────────────────────────────────────┐
 │              Laravel API (Railway)                   │
 │                                                      │
@@ -66,6 +111,7 @@ Two deep learning models were fine-tuned on a merged waste dataset of **10,992 i
 - Final model size: 15.7 MB (ONNX, IR v8)
 
 ### Waste Categories
+
 | Label | Category |
 |---|---|
 | ♻️ Recyclable | Cardboard, glass, metal, paper, plastic |
@@ -91,6 +137,7 @@ Two deep learning models were fine-tuned on a merged waste dataset of **10,992 i
 ## 🗄️ Database Schema
 
 ### `users`
+
 | Column | Type | Description |
 |---|---|---|
 | id | bigint | Primary key |
@@ -103,6 +150,7 @@ Two deep learning models were fine-tuned on a merged waste dataset of **10,992 i
 | updated_at | timestamp | |
 
 ### `scan_history`
+
 | Column | Type | Description |
 |---|---|---|
 | id | bigint | Primary key |
@@ -298,6 +346,17 @@ EcoDex/
 │   ├── routes/
 │   │   └── api.php
 │   └── Dockerfile
+├── frontend/                         # React web app (ecodex.netlify.app)
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── Leaderboard.jsx       # Leaderboard + OpenStreetMap + PDF report
+│   │   ├── styles/
+│   │   │   ├── global.css
+│   │   │   └── leaderboard.css
+│   │   └── api/
+│   │       └── api.js
 ├── lib/                              # Flutter app
 │   ├── main.dart
 │   ├── login_screen.dart
@@ -319,11 +378,16 @@ EcoDex/
 
 ## 🚀 Deployment
 
-Deployed on **Railway** with automatic migrations on every push.
+| Component | Platform | Details |
+|---|---|---|
+| **Laravel API** | Railway | Docker (PHP + Laravel), MySQL managed DB |
+| **React Website** | Netlify | Static build, auto-deploys from `main` |
+| **Android App** | GitHub Releases | APK distributed via GitHub |
 
-- **Runtime:** Docker (PHP + Laravel)
-- **Database:** MySQL (Railway managed)
-- **Start command:** `php artisan config:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080`
+**API start command:**
+```bash
+php artisan config:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080
+```
 
 ---
 
@@ -332,6 +396,8 @@ Deployed on **Railway** with automatic migrations on every push.
 EcoDex addresses improper waste disposal by making recycling education engaging through gamification:
 
 1. **On-device machine learning** — classification runs on the phone using ONNX Runtime, making it fast, private, and offline-capable. No images leave the device.
-2. **Gamification** — users earn points per scan and compete on a live leaderboard, driving repeat engagement.
-3. **Education** — every scan result includes a contextual eco tip explaining how to properly dispose of the identified item.
-4. **History tracking** — users can review all past scans with confidence scores, building awareness over time.
+2. **Model choice** — users can switch between ResNet-50 (max accuracy) and EfficientNet-B0 (speed & size) depending on their device and preference.
+3. **Gamification** — users earn points per scan and compete on a live leaderboard, driving repeat engagement.
+4. **Education** — every scan result includes a contextual eco tip explaining how to properly dispose of the identified item.
+5. **History tracking** — users can review all past scans with confidence scores, building awareness over time.
+6. **Web companion** — the website extends reach beyond mobile, offering the leaderboard, an interactive waste facility map of Bangladesh, and a downloadable PDF zone report — all accessible from any browser.
